@@ -1,0 +1,46 @@
+---
+title: "Delete a conversation — DELETE /api/conversations/:id"
+description: "Permanently delete a conversation and all of its messages. Returns HTTP 204 No Content on success. This action cannot be undone."
+---
+
+Sending a DELETE request removes the conversation and every message it contains from the database. The deletion cascades automatically — you do not need to delete messages individually before deleting the conversation. The endpoint returns HTTP **204 No Content** with an empty body on success.
+
+<Warning>
+  Deletion is permanent and cannot be undone. All messages in the conversation are also deleted. Make sure you have exported or saved any content you want to keep before calling this endpoint.
+</Warning>
+
+## Request
+
+All requests to this endpoint require a valid JWT passed as a Bearer token.
+
+<ParamField header="Authorization" type="string" required>
+  Your JWT access token. Format: `Bearer <token>`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The UUID of the conversation you want to delete.
+</ParamField>
+
+## Response
+
+A successful request returns HTTP **204 No Content** with no response body.
+
+## Errors
+
+| Status | Cause |
+|--------|-------|
+| `401 Unauthorized` | The `Authorization` header is missing or the token is invalid. |
+| `404 Not Found` | No conversation with the given ID exists, or it belongs to a different user. |
+
+## Example
+
+<CodeGroup>
+
+```bash curl
+curl -X DELETE https://your-instance.com/api/conversations/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+  -H "Authorization: Bearer <token>"
+```
+
+</CodeGroup>
+
+A successful response has no body and returns status `204`.

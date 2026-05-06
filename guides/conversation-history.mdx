@@ -1,0 +1,133 @@
+---
+title: "View, rename, and delete past conversations"
+description: "List all your conversations, fetch a single conversation with its full message history, rename it, or permanently delete it via the API or the sidebar."
+---
+
+Every message you send is saved to a conversation so you can return to it later. You can list all your past conversations, open one to read the full message thread, give it a new title, or remove it entirely. These actions are available both from the web app sidebar and the REST API.
+
+## Using the web app
+
+The left sidebar lists all your conversations sorted by most recent. Click any conversation to open it and resume from where you left off. After the first AI reply in a new conversation, the title updates automatically to reflect the content of that exchange — you can rename it again at any time.
+
+## Managing conversations via the API
+
+All conversation endpoints require a valid `Authorization: Bearer <token>` header.
+
+### List all conversations
+
+`GET /api/conversations` returns an array of your conversation objects, ordered by most recently updated.
+
+<CodeGroup>
+
+```bash curl
+curl https://your-domain/api/conversations \
+  -H "Authorization: Bearer <token>"
+```
+
+```javascript fetch
+const res = await fetch('https://your-domain/api/conversations', {
+  headers: { Authorization: `Bearer ${accessToken}` },
+});
+
+const conversations = await res.json();
+// [{ id, title, createdAt, updatedAt }, ...]
+```
+
+</CodeGroup>
+
+### Get a single conversation with messages
+
+`GET /api/conversations/:id` returns the conversation object together with its full `messages` array.
+
+<CodeGroup>
+
+```bash curl
+curl https://your-domain/api/conversations/<id> \
+  -H "Authorization: Bearer <token>"
+```
+
+```javascript fetch
+const res = await fetch(`https://your-domain/api/conversations/${id}`, {
+  headers: { Authorization: `Bearer ${accessToken}` },
+});
+
+const conversation = await res.json();
+```
+
+</CodeGroup>
+
+The response has the following shape:
+
+```json
+{
+  "id": "clx1a2b3c4d5e6f7g",
+  "title": "My first chat",
+  "createdAt": "2024-06-01T10:00:00.000Z",
+  "updatedAt": "2024-06-01T10:05:00.000Z",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello! What can you help me with?",
+      "createdAt": "2024-06-01T10:00:01.000Z"
+    },
+    {
+      "role": "assistant",
+      "content": "I can help with questions, math, weather, and more!",
+      "createdAt": "2024-06-01T10:00:05.000Z"
+    }
+  ]
+}
+```
+
+Each message has a `role` (`user` or `assistant`), a `content` string, and a `createdAt` timestamp.
+
+### Rename a conversation
+
+Send a `PATCH` request to `/api/conversations/:id` with a JSON body containing the new `title`.
+
+<CodeGroup>
+
+```bash curl
+curl -X PATCH https://your-domain/api/conversations/<id> \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Weekend trip planning"}'
+```
+
+```javascript fetch
+await fetch(`https://your-domain/api/conversations/${id}`, {
+  method: 'PATCH',
+  headers: {
+    Authorization: `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({ title: 'Weekend trip planning' }),
+});
+```
+
+</CodeGroup>
+
+### Delete a conversation
+
+Send a `DELETE` request to `/api/conversations/:id`. A successful deletion returns `204 No Content` with no response body.
+
+<CodeGroup>
+
+```bash curl
+curl -X DELETE https://your-domain/api/conversations/<id> \
+  -H "Authorization: Bearer <token>"
+```
+
+```javascript fetch
+await fetch(`https://your-domain/api/conversations/${id}`, {
+  method: 'DELETE',
+  headers: { Authorization: `Bearer ${accessToken}` },
+});
+// 204 No Content on success
+```
+
+</CodeGroup>
+
+<Warning>
+  Deleting a conversation permanently removes all of its messages. This action cannot be undone.
+</Warning>

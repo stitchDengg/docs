@@ -1,0 +1,73 @@
+---
+title: "Configure the AI model and thinking mode settings"
+description: "Configure the AI model, response token limit, and extended thinking mode for your Claw Agent instance. All settings are controlled via environment variables."
+---
+
+Claw Agent runs on `MiniMax-M2.7` by default, accessed through an Anthropic-compatible API. You control model behavior through environment variables — no code changes are required. This page covers which model is used, how to switch providers, and how to tune the thinking mode for your use case.
+
+## Default Model
+
+Out of the box, Claw Agent uses `MiniMax-M2.7` via the MiniMax Anthropic-compatible endpoint at `https://api.minimaxi.com/anthropic`. The agent generates responses with a maximum of **4096 output tokens** per turn.
+
+## Using a Different Provider
+
+Because Claw Agent talks to the LLM through an Anthropic-compatible API, you can point it at any provider that exposes the same interface by changing two environment variables:
+
+<CodeGroup>
+```bash MiniMax (default)
+MINIMAX_API_KEY=your_minimax_key
+MINIMAX_BASE_URL=https://api.minimaxi.com/anthropic
+```
+
+```bash Custom Anthropic-compatible provider
+MINIMAX_API_KEY=your_provider_api_key
+MINIMAX_BASE_URL=https://your-provider.example.com/anthropic
+```
+</CodeGroup>
+
+<Note>
+  Any change to `MINIMAX_API_KEY` or `MINIMAX_BASE_URL` requires a server restart to take effect.
+</Note>
+
+## Thinking Mode
+
+When thinking mode is enabled, the model performs an internal reasoning pass before it generates its final answer. This structured reasoning step helps the model handle multi-step problems, break down ambiguous questions, and catch errors in its own logic before responding.
+
+### Enabling and Disabling
+
+Thinking mode is controlled by `THINKING_ENABLED` in your `.env` file.
+
+```bash
+# Enable thinking (default)
+THINKING_ENABLED=true
+
+# Disable thinking
+THINKING_ENABLED=false
+```
+
+When thinking mode is on, users see both the model's reasoning trace and its final answer in the chat interface. When it is off, only the final answer is shown.
+
+### Setting the Token Budget
+
+The `THINKING_BUDGET_TOKENS` variable sets the maximum number of tokens the model may spend on its internal reasoning before it begins writing the response.
+
+```bash
+# Default: 10 000 tokens
+THINKING_BUDGET_TOKENS=10000
+
+# Higher budget for more thorough reasoning
+THINKING_BUDGET_TOKENS=20000
+
+# Lower budget for faster, simpler responses
+THINKING_BUDGET_TOKENS=3000
+```
+
+A higher budget gives the model more room to reason through difficult problems but increases latency before the first token of the final answer arrives. The budget is a ceiling, not a guarantee — the model may use fewer tokens if the question is straightforward.
+
+<Tip>
+  Consider raising `THINKING_BUDGET_TOKENS` if your users frequently ask questions that involve multi-step reasoning, mathematics, code debugging, or planning tasks. For general Q&A or simple lookups, the default of `10000` is usually sufficient.
+</Tip>
+
+### System Prompt
+
+The agent always starts every conversation with a built-in system prompt that instructs it to answer helpfully and accurately. You cannot change the system prompt through environment variables. The model's behavior is shaped primarily by the model version and the thinking configuration you set above.

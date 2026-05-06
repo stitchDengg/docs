@@ -1,0 +1,79 @@
+---
+title: "GET /api/auth/me — get the current user"
+description: "Return the authenticated user's profile. Requires a valid Bearer token. Useful for verifying a token is still accepted and retrieving user details."
+---
+
+Use this endpoint to fetch the profile of the currently authenticated user. The server validates your JWT, looks up the associated account, and returns the user object. This endpoint makes no changes to any data.
+
+<Note>
+  This endpoint is a convenient way to verify that a stored token is still valid. If you receive a 200, the token is accepted and the session is active. A 401 means the token is missing, malformed, or no longer valid.
+</Note>
+
+## Request
+
+This endpoint requires no request body. You must include a valid JWT in the `Authorization` header.
+
+| Header | Value |
+|--------|-------|
+| `Authorization` | `Bearer <token>` |
+
+## Response
+
+A successful request returns HTTP **200** with a JSON body wrapping the user object.
+
+<ResponseField name="user" type="object">
+  The authenticated user's profile.
+
+  <Expandable title="user fields">
+    <ResponseField name="user.id" type="string">
+      The unique user ID (UUID).
+    </ResponseField>
+
+    <ResponseField name="user.username" type="string">
+      The user's registered username.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `401 Unauthorized` | The `Authorization` header is missing, the token is malformed, or the token's associated user no longer exists. |
+
+## Examples
+
+<CodeGroup>
+```bash curl
+curl https://your-domain.com/api/auth/me \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+```javascript fetch
+const token = localStorage.getItem('token');
+
+const response = await fetch('https://your-domain.com/api/auth/me', {
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+});
+
+if (response.ok) {
+  const { user } = await response.json();
+  console.log(user.id, user.username);
+} else {
+  // 401 — token is invalid or expired; redirect to login
+}
+```
+</CodeGroup>
+
+**Example response (200)**
+
+```json
+{
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "username": "alice"
+  }
+}
+```

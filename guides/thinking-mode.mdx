@@ -1,0 +1,78 @@
+---
+title: "Use thinking mode for step-by-step reasoning"
+description: "Learn how Claw Agent's extended reasoning feature works, when to reach for it, and how to read the thinking content in the web app and the streaming API."
+---
+
+Thinking mode lets the AI work through a problem before it commits to an answer. Instead of jumping straight to a reply, the model reasons step by step — and Claw Agent shows you that reasoning process so you can follow along and spot where the logic came from. This is especially valuable for questions that require multiple reasoning steps, precision, or careful disambiguation.
+
+## What thinking mode does
+
+When thinking mode is active, the AI produces two outputs for each response: a private reasoning trace (the "thinking" content) and the final answer. The thinking trace is generated first and streamed separately, so you see the AI's working before the answer arrives. The trace is not part of the final response text — it is a window into the model's process.
+
+<Tip>
+  Thinking mode is especially useful for math problems, multi-step logic, and questions with ambiguous phrasing where you want to verify the AI is interpreting your intent correctly.
+</Tip>
+
+## In the web app
+
+When the server has thinking mode enabled, a collapsible **Thinking** block appears above each AI answer. During the response you can watch the reasoning stream in real time. Once the AI finishes thinking and begins its answer, the block automatically collapses and shows a summary label such as **"Thought for 3 seconds"**. Click the block to expand it and read the full reasoning trace at any time.
+
+The three states of the Thinking block are:
+
+| State | Appearance |
+| --- | --- |
+| Streaming | Expanded, with a pulsing indicator and a blinking cursor at the end of the text |
+| Complete, collapsed (default) | Single collapsed row showing the duration, e.g. "Thought for 3 seconds" — click to expand |
+| Expanded after collapse | Full reasoning text visible with a scroll area; click the header to collapse again |
+
+## In the streaming API
+
+Thinking content arrives as annotation lines in the stream, identified by the `2:` prefix. Each annotation line carries a JSON object. You will see two event types:
+
+| Event type | Meaning |
+| --- | --- |
+| `{"type":"thinking_delta","content":"..."}` | The next chunk of the reasoning trace |
+| `{"type":"thinking_complete"}` | The AI has finished reasoning; the final answer text follows on `0:` lines |
+
+A typical sequence for a response with thinking looks like this:
+
+```
+2:[{"type":"thinking_delta","content":"The user is asking about..."}]
+2:[{"type":"thinking_delta","content":" I should first consider..."}]
+2:[{"type":"thinking_complete"}]
+0:"Here is my answer:"
+0:" The result is 42."
+d:{"finishReason":"stop","usage":{...}}
+```
+
+To capture thinking content alongside the main response text, process `2:` lines separately from `0:` lines:
+
+```javascript
+for (const line of lines) {
+  if (line.startsWith('0:')) {
+    // Final answer token
+    const text = JSON.parse(line.slice(2));
+    answerBuffer += text;
+  } else if (line.startsWith('2:')) {
+    // Thinking annotation — value is a JSON array
+    const annotations = JSON.parse(line.slice(2));
+    for (const annotation of annotations) {
+      if (annotation.type === 'thinking_delta') {
+        thinkingBuffer += annotation.content;
+      } else if (annotation.type === 'thinking_complete') {
+        console.log('Thinking finished:', thinkingBuffer);
+      }
+    }
+  } else if (line.startsWith('d:')) {
+    console.log('Stream complete');
+  }
+}
+```
+
+## Enabling thinking mode
+
+Thinking mode is controlled by the server configuration. When the server is started with `THINKING_ENABLED=true`, it is active for all responses. You do not need to pass any additional parameter in your chat request — the server applies the setting automatically.
+
+<Note>
+  If you are self-hosting Claw Agent, set `THINKING_ENABLED=true` in your `.env` file to turn on thinking mode. See the [Environment variables](/configuration/environment-variables) page for the full list of configuration options.
+</Note>

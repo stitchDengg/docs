@@ -1,0 +1,89 @@
+---
+title: "POST /api/auth/register — create a new account"
+description: "Create a new Claw Agent account with a username (3–20 chars) and password (min 6 chars). Returns a signed JWT token and the user object on success."
+---
+
+Use this endpoint to create a new Claw Agent account. You provide a username and password; the server validates the input, hashes the password, and returns a signed JWT token together with the new user's details. Store the token — you will need it as a Bearer token for all authenticated requests.
+
+## Request
+
+<ParamField body="username" type="string" required>
+  The desired username. Must be between 3 and 20 characters. Leading and trailing whitespace is trimmed before validation.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  The account password. Must be at least 6 characters. Stored securely — never in plain text.
+</ParamField>
+
+## Response
+
+A successful request returns HTTP **201** with a JSON body containing a token and user object.
+
+<ResponseField name="token" type="string">
+  A signed JWT. Include this value in the `Authorization: Bearer <token>` header on all subsequent authenticated requests.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  The newly created user record.
+
+  <Expandable title="user fields">
+    <ResponseField name="user.id" type="string">
+      The unique user ID (UUID).
+    </ResponseField>
+
+    <ResponseField name="user.username" type="string">
+      The username as stored (after trimming).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `400 Bad Request` | Validation failed — `username` is shorter than 3 or longer than 20 characters, or `password` is shorter than 6 characters. |
+| `409 Conflict` | The requested username is already taken. Choose a different username. |
+
+<Warning>
+  Usernames are unique across the system. If you receive a 409, the exact username is already registered — the server does not expose whether the conflicting account is active.
+</Warning>
+
+## Examples
+
+<CodeGroup>
+```bash curl
+curl -X POST https://your-domain.com/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "alice",
+    "password": "s3cur3pass"
+  }'
+```
+
+```javascript fetch
+const response = await fetch('https://your-domain.com/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'alice',
+    password: 's3cur3pass',
+  }),
+});
+
+const data = await response.json();
+// data.token  — store this for authenticated requests
+// data.user   — { id, username }
+```
+</CodeGroup>
+
+**Example response (201)**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "username": "alice"
+  }
+}
+```

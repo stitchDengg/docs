@@ -1,0 +1,102 @@
+---
+title: "Send your first message and stream a response"
+description: "Create a conversation, post a message to the chat endpoint, and read the streaming response line by line — or skip the API and use the web UI directly."
+---
+
+Claw Agent returns AI responses as a stream of text tokens rather than a single payload, so your interface can display words as they arrive instead of waiting for the full reply. To start a conversation via the API you first create a conversation to get an ID, then post your message to the chat endpoint using that ID. If you prefer to skip the API entirely, the web app handles everything for you.
+
+## Using the web app
+
+Open Claw Agent in your browser and type your message in the input box at the bottom of the screen. Press **Enter** (or click the send button) to submit it. The AI response streams in word-by-word directly in the chat window — no setup required.
+
+<Tip>
+  The welcome screen shows a set of suggested prompts. Click any suggestion to populate the input box, then edit or send it as-is. This is a fast way to explore what Claw Agent can do.
+</Tip>
+
+## Using the API
+
+<Steps>
+  <Step title="Create a conversation">
+    Send a `POST` request to `/api/conversations` with a JSON body containing a `title` for the new conversation. The response is a conversation object; save the `id` field — you'll pass it with every message in this session.
+
+    <CodeGroup>
+
+    ```bash curl
+    curl -X POST https://your-domain/api/conversations \
+      -H "Authorization: Bearer <token>" \
+      -H "Content-Type: application/json" \
+      -d '{"title": "My first chat"}'
+    ```
+
+    ```javascript fetch
+    const res = await fetch('https://your-domain/api/conversations', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ title: 'My first chat' }),
+    });
+
+    const conversation = await res.json();
+    const conversationId = conversation.id;
+    ```
+
+    </CodeGroup>
+  </Step>
+
+  <Step title="Send a message and read the stream">
+    Post to `/api/chat` with `conversationId` and `message` in the body. The endpoint responds with `200 OK` and a streaming body in the Vercel AI Data Stream format. Read the response body as a `ReadableStream`, splitting on newlines to process each data line.
+
+    Lines that begin with `0:` carry a JSON-encoded text token — decode the JSON string to get the raw text fragment. Lines beginning with `d:` signal that the stream has ended.
+
+    ```javascript fetch
+    // Step 1: create the conversation (see above) → conversationId
+
+    // Step 2: send a message and stream the response
+    const chatRes = await fetch('https://your-domain/api/chat', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        conversationId,
+        message: 'Hello! What can you help me with?',
+      }),
+    });
+
+    const reader = chatRes.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // keep any incomplete trailing line
+
+      for (const line of lines) {
+        if (line.startsWith('0:')) {
+          // JSON-encoded text token
+          const text = JSON.parse(line.slice(2));
+          process.stdout.write(text); // or append to your UI
+        } else if (line.startsWith('d:')) {
+          // Stream finished
+          console.log('\n[done]');
+        }
+      }
+    }
+    ```
+  </Step>
+</Steps>
+
+## Stream line prefix reference
+
+| Prefix | Meaning |
+| --- | --- |
+| `0:` | JSON-encoded text token — the next chunk of the AI's reply |
+| `2:` | Annotation object — used for thinking-mode events (see [Thinking mode](/guides/thinking-mode)) |
+| `d:` | Stream finished |

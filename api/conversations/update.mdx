@@ -1,0 +1,73 @@
+---
+title: "Update a conversation — PATCH /api/conversations/:id"
+description: "Rename a conversation by sending a new title in the request body. Returns the updated id, title, and refreshed updatedAt timestamp on success."
+---
+
+Use this endpoint to rename a conversation. Supply the new `title` in the request body and the server will persist the change, updating the `updatedAt` timestamp automatically. You can only update conversations that belong to your account.
+
+## Request
+
+All requests to this endpoint require a valid JWT passed as a Bearer token.
+
+<ParamField header="Authorization" type="string" required>
+  Your JWT access token. Format: `Bearer <token>`.
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The UUID of the conversation you want to update.
+</ParamField>
+
+### Body
+
+<ParamField body="title" type="string" required>
+  The new title for the conversation. Maximum 200 characters.
+</ParamField>
+
+## Response
+
+A successful request returns HTTP **200** with the updated conversation object.
+
+<ResponseField name="id" type="string" required>
+  UUID that uniquely identifies the conversation.
+</ResponseField>
+
+<ResponseField name="title" type="string" required>
+  The conversation title after the update.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp recording when the conversation was last modified.
+</ResponseField>
+
+## Errors
+
+| Status | Cause |
+|--------|-------|
+| `400 Bad Request` | The request body fails validation (for example, `title` is missing, not a string, or exceeds 200 characters). |
+| `401 Unauthorized` | The `Authorization` header is missing or the token is invalid. |
+| `404 Not Found` | No conversation with the given ID exists, or it belongs to a different user. |
+
+## Example
+
+<CodeGroup>
+
+```bash curl
+curl -X PATCH https://your-instance.com/api/conversations/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Linked list deep dive"}'
+```
+
+</CodeGroup>
+
+```json Response (200)
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "title": "Linked list deep dive",
+  "updatedAt": "2026-05-06T11:00:00.000Z"
+}
+```

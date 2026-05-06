@@ -1,0 +1,91 @@
+---
+title: "Streaming: receive responses token by token"
+description: "Claw Agent always streams its responses as they're generated. Learn the stream format, how to read it, and what to expect when the connection ends."
+---
+
+Streaming means you see the AI's response appear word by word — or even character by character — as it is generated, rather than waiting for the entire reply to be ready before anything appears on screen. This dramatically reduces the time before you see useful output, especially for longer answers. Every call to `POST /api/chat` streams; there is no batch mode.
+
+## Why streaming matters
+
+Without streaming, you send a request, wait for the full response to be generated server-side, and only then receive it. On a complex question that takes ten seconds to answer, that means ten seconds of a blank screen. With streaming, you start seeing tokens within a fraction of a second and can begin reading while the rest of the response is still being written.
+
+## Stream format
+
+Claw Agent uses the **Vercel AI Data Stream** protocol (`X-Vercel-AI-Data-Stream: v1`). Each line in the response body is a self-contained event. Lines use a prefix character to indicate their type:
+
+| Prefix | Meaning                              |
+| ------ | ------------------------------------ |
+| `0:`   | A text token — part of the AI's answer. |
+| `2:`   | A data annotation — used for thinking tokens and thinking-complete signals. |
+| `d:`   | The final line — signals the stream is finished and includes usage metadata. |
+
+### Text tokens (`0:`)
+
+Regular response text arrives as lines starting with `0:` followed by a JSON-encoded string:
+
+```
+0:"Hello"
+0:", here"
+0:" is the"
+0:" weather"
+0:" in Shanghai"
+0:"..."
+```
+
+Concatenate these strings in order to reconstruct the full response text.
+
+### Thinking tokens (`2:`)
+
+When thinking mode is active, the agent's internal reasoning arrives as annotation lines before the final text. Each line holds a JSON array:
+
+```
+2:[{"type":"thinking_delta","content":"The user is asking about the weather..."}]
+2:[{"type":"thinking_delta","content":" I should call the get_weather tool."}]
+2:[{"type":"thinking_complete"}]
+```
+
+- `thinking_delta` events carry incremental reasoning text. Concatenate them to get the full thought.
+- `thinking_complete` signals that the thinking phase is over and text tokens will follow.
+
+### End-of-stream line (`d:`)
+
+The last line of every stream starts with `d:` and contains a JSON object with the finish reason and token usage:
+
+```
+d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}
+```
+
+A `finishReason` of `"stop"` means the agent completed normally. A value of `"error"` means something went wrong — in that case, an error message will have appeared as a `0:` line just before.
+
+## A complete example
+
+Below is what a short, successful stream looks like in its entirety:
+
+```
+0:"Sure"
+0:"! The"
+0:" current"
+0:" weather"
+0:" in"
+0:" Shanghai"
+0:" is"
+0:" 18°C"
+0:" and"
+0:" cloudy"
+0:"."
+d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}
+```
+
+## Timeouts and disconnections
+
+The stream has a **60-second timeout**. If the AI has not finished generating a response within 60 seconds, the connection closes and a `finishReason` of `"error"` is written to the stream.
+
+If you close the connection before the stream finishes — for example, by navigating away — the server detects the disconnect and stops processing gracefully. No partial response is saved.
+
+<Note>
+  Most HTTP clients and browser `fetch` calls handle chunked transfer encoding automatically. You read the response body as a readable stream and process each newline-terminated chunk as an event.
+</Note>
+
+<Warning>
+  Do not parse the entire response body as a single JSON object. Each line is an independent event. Read and process lines one at a time as they arrive.
+</Warning>

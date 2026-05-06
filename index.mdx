@@ -1,0 +1,55 @@
+---
+title: "Claw Agent: AI chat assistant with real-time streaming"
+description: "Claw Agent is an AI-powered chat assistant with streaming responses, multi-turn conversations, and built-in tools. Get started in minutes."
+---
+
+Claw Agent is an AI chat assistant that delivers real-time streaming responses, maintains full conversation history, and comes equipped with built-in tools for weather lookup, math calculations, and knowledge search. Whether you're using the web interface or calling the REST API directly, Claw Agent gives you a fast, context-aware AI assistant backed by the MiniMax LLM.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Create an account and send your first message in under five minutes.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/auth/register">
+    Explore the full REST API for authentication, conversations, and streaming chat.
+  </Card>
+  <Card title="Core Concepts" icon="book-open" href="/concepts/conversations">
+    Understand conversations, the AI agent, streaming, and built-in tools.
+  </Card>
+  <Card title="Self-Hosting" icon="server" href="/self-hosting">
+    Deploy Claw Agent on your own infrastructure with Docker Compose.
+  </Card>
+</CardGroup>
+
+## Get started in four steps
+
+<Steps>
+  <Step title="Create an account">
+    Register at the Claw Agent web app or call `POST /api/auth/register` with a username and password.
+  </Step>
+  <Step title="Log in and get your token">
+    Call `POST /api/auth/login` to receive a JWT access token. Include it as `Authorization: Bearer <token>` on every subsequent request.
+  </Step>
+  <Step title="Create a conversation">
+    Call `POST /api/conversations` to open a new chat session. Save the returned `id` — you'll use it when sending messages.
+  </Step>
+  <Step title="Start chatting">
+    Send a message to `POST /api/chat` with your `conversationId` and `message`. The response streams back token-by-token in real time.
+  </Step>
+</Steps>
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Streaming responses" icon="bolt" href="/concepts/streaming">
+    Get AI responses token-by-token as they're generated — no waiting for the full reply.
+  </Card>
+  <Card title="Thinking mode" icon="brain" href="/guides/thinking-mode">
+    Watch the AI reason through complex problems with a visible thought process before answering.
+  </Card>
+  <Card title="Built-in tools" icon="wrench" href="/concepts/tools">
+    The agent automatically uses weather, calculator, and knowledge-search tools to enrich its answers.
+  </Card>
+  <Card title="Conversation history" icon="clock-rotate-left" href="/guides/conversation-history">
+    All messages are persisted so you can resume any conversation at any time.
+  </Card>
+</CardGroup>

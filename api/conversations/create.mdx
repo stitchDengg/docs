@@ -1,0 +1,73 @@
+---
+title: "Create a conversation — POST /api/conversations"
+description: "Create a new, empty conversation for the authenticated user. Optionally supply a title; defaults to a placeholder. Returns the new conversation object with its id."
+---
+
+Sending a POST request to this endpoint creates a new, empty conversation and associates it with your account. You can optionally supply a `title`; if you omit it, the conversation is created with the default title `"新对话"`. The endpoint returns HTTP **201 Created** on success.
+
+## Request
+
+All requests to this endpoint require a valid JWT passed as a Bearer token.
+
+<ParamField header="Authorization" type="string" required>
+  Your JWT access token. Format: `Bearer <token>`.
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  Must be `application/json`.
+</ParamField>
+
+### Body
+
+<ParamField body="title" type="string">
+  A name for the conversation. Maximum 200 characters. If omitted, the server uses the default title `"新对话"`.
+</ParamField>
+
+## Response
+
+A successful request returns HTTP **201** with the newly created conversation object.
+
+<ResponseField name="id" type="string" required>
+  UUID that uniquely identifies the new conversation.
+</ResponseField>
+
+<ResponseField name="title" type="string" required>
+  The title of the conversation as stored.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp recording when the conversation was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp recording when the conversation was last modified. Matches `createdAt` for a newly created conversation.
+</ResponseField>
+
+## Errors
+
+| Status | Cause |
+|--------|-------|
+| `400 Bad Request` | The request body fails validation (for example, `title` exceeds 200 characters or is not a string). |
+| `401 Unauthorized` | The `Authorization` header is missing or the token is invalid. |
+
+## Example
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://your-instance.com/api/conversations \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"title": "My project chat"}'
+```
+
+</CodeGroup>
+
+```json Response (201)
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "title": "My project chat",
+  "createdAt": "2026-05-06T10:00:00.000Z",
+  "updatedAt": "2026-05-06T10:00:00.000Z"
+}
+```

@@ -1,0 +1,209 @@
+---
+title: "Quickstart: Your First Streamed AI Response"
+description: "Register an account, create a conversation, and receive a real-time streaming AI reply from Claw Agent using the REST API in under five minutes."
+---
+
+This guide walks you through the complete flow from a fresh account to a live streaming response. All four steps use the REST API, so you can follow along with curl or copy the JavaScript fetch examples into any runtime. Replace `http://localhost:3000` with your deployment's base URL throughout.
+
+<Steps>
+
+<Step title="Register an account">
+
+Send a `POST` request to `/api/auth/register` with a username and password. The username must be between 3 and 20 characters; the password must be at least 6 characters.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST http://localhost:3000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "yourname", "password": "yourpassword"}'
+```
+
+```javascript JavaScript
+const res = await fetch("http://localhost:3000/api/auth/register", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username: "yourname", password: "yourpassword" }),
+});
+const data = await res.json();
+console.log(data);
+```
+
+</CodeGroup>
+
+A successful registration returns HTTP `201` with your new user record:
+
+```json
+{
+  "id": "clx1abc123",
+  "username": "yourname",
+  "createdAt": "2024-01-15T10:00:00.000Z"
+}
+```
+
+<Note>
+  If you already have an account, skip this step and go straight to login.
+</Note>
+
+</Step>
+
+<Step title="Log in and get your token">
+
+Send a `POST` request to `/api/auth/login` with the same credentials. The response includes a JWT token you will use to authenticate every subsequent request.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST http://localhost:3000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "yourname", "password": "yourpassword"}'
+```
+
+```javascript JavaScript
+const res = await fetch("http://localhost:3000/api/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username: "yourname", password: "yourpassword" }),
+});
+const { token } = await res.json();
+// Store this token for the next steps
+console.log(token);
+```
+
+</CodeGroup>
+
+The response body contains your token:
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+<Tip>
+  Save the token value in an environment variable (e.g. `TOKEN`) so you can reuse it easily in your terminal session: `export TOKEN="eyJ..."`
+</Tip>
+
+</Step>
+
+<Step title="Create a conversation">
+
+Every chat exchange belongs to a conversation. Create one by sending a `POST` request to `/api/conversations`. Pass your JWT token in the `Authorization` header as a Bearer token.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST http://localhost:3000/api/conversations \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"title": "My first conversation"}'
+```
+
+```javascript JavaScript
+const res = await fetch("http://localhost:3000/api/conversations", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({ title: "My first conversation" }),
+});
+const conversation = await res.json();
+console.log(conversation.id); // save this
+```
+
+</CodeGroup>
+
+The response returns your new conversation, including its `id`:
+
+```json
+{
+  "id": "clx2xyz789",
+  "title": "My first conversation",
+  "createdAt": "2024-01-15T10:01:00.000Z",
+  "updatedAt": "2024-01-15T10:01:00.000Z"
+}
+```
+
+</Step>
+
+<Step title="Send a message and read the stream">
+
+Send a `POST` request to `/api/chat` with your `conversationId` and `message`. The response is a stream — the server writes tokens incrementally as the model generates them.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST http://localhost:3000/api/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"conversationId": "clx2xyz789", "message": "What is LangGraph?"}' \
+  --no-buffer
+```
+
+```javascript JavaScript
+const res = await fetch("http://localhost:3000/api/chat", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify({
+    conversationId: "clx2xyz789",
+    message: "What is LangGraph?",
+  }),
+});
+
+const reader = res.body.getReader();
+const decoder = new TextDecoder();
+
+while (true) {
+  const { done, value } = await reader.read();
+  if (done) break;
+
+  const chunk = decoder.decode(value);
+  for (const line of chunk.split("\n")) {
+    if (line.startsWith("0:")) {
+      // Token chunk — strip the prefix and parse the JSON string
+      process.stdout.write(JSON.parse(line.slice(2)));
+    } else if (line.startsWith("d:")) {
+      // Stream finished
+      console.log("\n[done]", line.slice(2));
+    }
+  }
+}
+```
+
+</CodeGroup>
+
+The stream uses the Vercel AI Data Stream format. Each line has a type prefix:
+
+| Line prefix | Meaning |
+|---|---|
+| `0:"token text"` | A streamed token fragment from the model |
+| `d:{...}` | The final finish message — signals the stream is complete |
+
+A typical stream looks like this:
+
+```
+0:"LangGraph"
+0:" is"
+0:" a"
+0:" framework"
+0:" for"
+0:" building"
+0:" stateful"
+0:" agents"
+0:"..."
+d:{"finishReason":"stop","usage":{"promptTokens":42,"completionTokens":80}}
+```
+
+<Note>
+  The agent may call its built-in tools (weather, calculate, knowledge search) before streaming the final reply. You will see the token chunks arrive after any tool calls complete.
+</Note>
+
+</Step>
+
+</Steps>
+
+You have now registered, authenticated, created a conversation, and received a streamed AI response. Future messages to the same `conversationId` will include the full conversation history, so the agent maintains context across turns.

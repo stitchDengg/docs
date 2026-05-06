@@ -1,0 +1,107 @@
+---
+title: "Authenticate and manage your account access"
+description: "Register a new account, log in to receive a JWT token, and attach it to every API request to access protected Claw Agent endpoints."
+---
+
+Every Claw Agent API endpoint except registration and login requires a valid JWT token. You obtain that token by registering an account and logging in — the token is then attached as a header on all subsequent requests. This page walks you through the full flow, from creating your account to verifying it with the `/api/auth/me` endpoint.
+
+## Register an account
+
+Send a `POST` request to `/api/auth/register` with a JSON body containing a `username` and `password`. Usernames must be between 3 and 20 characters; passwords must be at least 6 characters. A successful response returns `201 Created` with your new user record.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://your-domain/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "password": "s3cur3pass"}'
+```
+
+```javascript fetch
+const response = await fetch('https://your-domain/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username: 'alice', password: 's3cur3pass' }),
+});
+
+const user = await response.json();
+console.log(user); // { id: '...', username: 'alice', ... }
+```
+
+</CodeGroup>
+
+## Log in and retrieve your token
+
+Send a `POST` request to `/api/auth/login` with the same `username` and `password`. The response body includes a `token` string and a `user` object. Store the `token` — you will need it for every protected request.
+
+<CodeGroup>
+
+```bash curl
+curl -X POST https://your-domain/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice", "password": "s3cur3pass"}'
+```
+
+```javascript fetch
+const response = await fetch('https://your-domain/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ username: 'alice', password: 's3cur3pass' }),
+});
+
+const { token, user } = await response.json();
+// token: "eyJhbGci..."
+// user: { id: "...", username: "alice" }
+```
+
+</CodeGroup>
+
+The login endpoint returns `201 Created`, not `200 OK`.
+
+## Attach the token to protected requests
+
+Include the token in the `Authorization` header on every request to a protected endpoint, using the `Bearer` scheme:
+
+```
+Authorization: Bearer <your-token>
+```
+
+<CodeGroup>
+
+```bash curl
+curl https://your-domain/api/auth/me \
+  -H "Authorization: Bearer eyJhbGci..."
+```
+
+```javascript fetch
+const response = await fetch('https://your-domain/api/auth/me', {
+  headers: { Authorization: `Bearer ${token}` },
+});
+
+const profile = await response.json();
+console.log(profile); // { user: { id: '...', username: 'alice' } }
+```
+
+</CodeGroup>
+
+## Verify your token
+
+`GET /api/auth/me` validates your token and returns your user profile. Use this endpoint to confirm that your token is still accepted before making other requests.
+
+<Note>
+  Tokens do not have a configurable expiry shown in the UI. If you receive a `401 Unauthorized` response on any request, your token has expired — log in again with `POST /api/auth/login` to get a fresh one.
+</Note>
+
+## Common errors
+
+<AccordionGroup>
+  <Accordion title="400 Bad Request">
+    The request body failed validation. Check that `username` is 3–20 characters and `password` is at least 6 characters. Both fields are required.
+  </Accordion>
+  <Accordion title="401 Unauthorized">
+    The token is missing, malformed, or expired. Log in again to obtain a new token and retry the request with the updated `Authorization` header.
+  </Accordion>
+  <Accordion title="409 Conflict">
+    The username is already taken. Choose a different username and retry the registration request.
+  </Accordion>
+</AccordionGroup>

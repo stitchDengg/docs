@@ -1,0 +1,112 @@
+---
+title: "Self-Hosting Claw Agent with Docker"
+description: "Deploy your own Claw Agent instance using Docker Compose. Covers required environment variables, service configuration, and verifying a healthy deployment."
+---
+
+Claw Agent ships as two Docker containers — a web frontend and a REST API server — orchestrated with Docker Compose. The web container proxies all API traffic to the server internally, so you only need to expose port 3000 publicly. This guide covers everything you need to go from a fresh machine to a running instance.
+
+## Prerequisites
+
+- Docker and Docker Compose installed (Docker Desktop or the Docker Engine + Compose plugin)
+- A MiniMax API key with access to the Anthropic-compatible endpoint
+- A PostgreSQL database reachable from your host (connection string ready)
+
+## Steps
+
+<Steps>
+
+<Step title="Clone the repository">
+
+```bash
+git clone https://github.com/stitchDengg/claw-agent.git
+cd claw-agent
+```
+
+</Step>
+
+<Step title="Configure environment variables">
+
+Copy the example file and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` in your editor and set the following variables:
+
+```env
+# MiniMax LLM credentials
+MINIMAX_API_KEY=your_minimax_api_key_here
+MINIMAX_BASE_URL=https://api.minimaxi.com/anthropic
+
+# JWT signing secret — use a long random string in production
+JWT_SECRET=change-me-to-a-long-random-secret
+
+# PostgreSQL connection string
+DATABASE_URL=postgresql://user:password@host:5432/clawagent
+
+# Allowed browser origin for CORS (your public domain or localhost)
+CORS_ORIGIN=http://localhost:3000
+```
+
+<Warning>
+  Never use a short or guessable value for `JWT_SECRET` in production. All user tokens are signed with this key — if it is compromised, any attacker can forge credentials for any account. Generate a secret with at least 32 random bytes, for example: `openssl rand -hex 32`
+</Warning>
+
+**Optional variables**
+
+| Variable | Default | Description |
+|---|---|---|
+| `THINKING_ENABLED` | `true` | Enables the model's extended reasoning (thinking) mode before replying |
+| `THINKING_BUDGET_TOKENS` | `10000` | Maximum tokens the model may spend on internal reasoning |
+
+Set `THINKING_ENABLED=false` if you want faster, lower-cost responses and do not need deep reasoning on complex questions.
+
+</Step>
+
+<Step title="Start the services">
+
+```bash
+docker compose up --build
+```
+
+Docker Compose builds both images and starts two services:
+
+| Service | Internal port | Description |
+|---|---|---|
+| `web` | 3000 | Next.js frontend and API proxy — the only port you need to expose |
+| `server` | 8001 | REST API server and AI agent (internal only) |
+
+The `web` container proxies all `/api/*` requests to `server:8001` over the internal Docker network. You do not need to expose port 8001 publicly.
+
+<Note>
+  On first startup, allow a minute for both images to build. Subsequent starts (without `--build`) are much faster.
+</Note>
+
+</Step>
+
+<Step title="Verify the deployment">
+
+Once both containers are running, check that the API is reachable:
+
+```bash
+curl http://localhost:3000/api/auth/register \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "password": "testpass"}'
+```
+
+A `201` response with a user object confirms the web proxy, the API server, and the database are all working correctly.
+
+Open `http://localhost:3000` in your browser to access the chat UI.
+
+</Step>
+
+</Steps>
+
+## Production tips
+
+- Put a reverse proxy (nginx, Caddy, or a cloud load balancer) in front of port 3000 to handle TLS termination.
+- Set `CORS_ORIGIN` to your exact public domain (e.g. `https://chat.example.com`) so the server rejects cross-origin requests from other sites.
+- Use a managed PostgreSQL service or mount a persistent volume for the database to avoid losing data when containers restart.
+- Both services are configured with `restart: unless-stopped`, so they recover automatically after a host reboot.

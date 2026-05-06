@@ -1,0 +1,101 @@
+{
+  "projectType": "saas",
+  "projectName": "Claw Agent",
+  "projectDescription": "An AI chat assistant powered by LangGraph.js that supports real-time streaming responses, multi-turn conversations, and built-in tools for weather lookup, math, and knowledge search.",
+  "theme": "luma",
+  "primaryColor": "#6366f1",
+  "lightColor": "#818cf8",
+  "darkColor": "#4f46e5",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "self-hosting"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/conversations",
+              "concepts/ai-agent",
+              "concepts/streaming",
+              "concepts/tools"
+            ]
+          },
+          {
+            "group": "Using the App",
+            "pages": [
+              "guides/authentication",
+              "guides/starting-a-chat",
+              "guides/conversation-history",
+              "guides/thinking-mode"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/environment-variables",
+              "configuration/ai-model"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Authentication",
+            "pages": [
+              "api/auth/register",
+              "api/auth/login",
+              "api/auth/me"
+            ]
+          },
+          {
+            "group": "Conversations",
+            "pages": [
+              "api/conversations/list",
+              "api/conversations/create",
+              "api/conversations/get",
+              "api/conversations/update",
+              "api/conversations/delete"
+            ]
+          },
+          {
+            "group": "Chat",
+            "pages": [
+              "api/chat/stream"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Real-time streaming AI responses with token-by-token delivery",
+    "Extended thinking mode for deep reasoning with visible thought process",
+    "Multi-turn conversation management with persistent history",
+    "Built-in tools: weather lookup, math calculator, knowledge search",
+    "Markdown rendering with syntax-highlighted code blocks",
+    "Dark/light theme support",
+    "JWT-based user authentication",
+    "One-click conversation creation from the home screen"
+  ],
+  "publicApiSurface": [
+    "POST /api/auth/register",
+    "POST /api/auth/login",
+    "GET /api/auth/me",
+    "GET /api/conversations",
+    "POST /api/conversations",
+    "GET /api/conversations/:id",
+    "PATCH /api/conversations/:id",
+    "DELETE /api/conversations/:id",
+    "POST /api/chat (streaming)"
+  ]
+}

@@ -1,0 +1,103 @@
+---
+title: "POST /api/auth/login — authenticate and get a token"
+description: "Authenticate with your username and password. Returns a signed JWT token and user details to use on all subsequent authenticated requests."
+---
+
+Use this endpoint to sign in to an existing Claw Agent account. You send your username and password, and the server returns a signed JWT token. Attach that token as an `Authorization: Bearer <token>` header on every request that requires authentication. The token does not expire client-side — treat it as a long-lived credential and store it securely.
+
+## Request
+
+<ParamField body="username" type="string" required>
+  Your registered username. Leading and trailing whitespace is trimmed before the lookup.
+</ParamField>
+
+<ParamField body="password" type="string" required>
+  Your account password. Verified securely server-side — never logged or stored in plain text.
+</ParamField>
+
+## Response
+
+A successful request returns HTTP **201** with a JSON body containing a token and user object.
+
+<ResponseField name="token" type="string">
+  A signed JWT. Pass this as `Authorization: Bearer <token>` on all subsequent authenticated requests.
+</ResponseField>
+
+<ResponseField name="user" type="object">
+  The authenticated user's details.
+
+  <Expandable title="user fields">
+    <ResponseField name="user.id" type="string">
+      The unique user ID (UUID).
+    </ResponseField>
+
+    <ResponseField name="user.username" type="string">
+      The username as stored on the account.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `400 Bad Request` | One or both fields are missing or empty. |
+| `401 Unauthorized` | The username does not exist, or the password is incorrect. |
+
+<Warning>
+  The server returns the same 401 error whether the username is not found or the password is wrong. This is intentional — it prevents username enumeration.
+</Warning>
+
+## Using the token
+
+After a successful login, include the token in the `Authorization` header on every protected request:
+
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+## Examples
+
+<CodeGroup>
+```bash curl
+curl -X POST https://your-domain.com/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "alice",
+    "password": "s3cur3pass"
+  }'
+```
+
+```javascript fetch
+const response = await fetch('https://your-domain.com/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'alice',
+    password: 's3cur3pass',
+  }),
+});
+
+const { token, user } = await response.json();
+
+// Store the token for use on subsequent requests
+localStorage.setItem('token', token);
+
+// Use it in authenticated requests
+const meResponse = await fetch('https://your-domain.com/api/auth/me', {
+  headers: { Authorization: `Bearer ${token}` },
+});
+```
+</CodeGroup>
+
+**Example response (201)**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "username": "alice"
+  }
+}
+```

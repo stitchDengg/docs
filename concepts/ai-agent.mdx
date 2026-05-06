@@ -1,0 +1,67 @@
+---
+title: "AI agent: how Claw Agent thinks and responds"
+description: "Claw Agent uses a reasoning loop to decide when to call tools, gather information, and compose a final answer before streaming any text to you."
+---
+
+The AI agent is the reasoning engine behind every response you receive. Rather than replying immediately to your message, it first evaluates whether it needs additional information — such as current weather data or a calculation result — calls the appropriate tools if so, and only then writes its final answer. You interact with one coherent reply; the reasoning and tool calls happen invisibly in the background.
+
+## How the agent processes your message
+
+When you send a message, the agent follows a loop:
+
+<Steps>
+  <Step title="Receive your message">
+    The agent receives your message along with the full conversation history as context. It knows everything discussed earlier in the session.
+  </Step>
+
+  <Step title="Decide whether to use tools">
+    The agent evaluates your message and decides if it can answer directly or if it first needs to call one or more tools — for example, looking up weather or evaluating a math expression.
+  </Step>
+
+  <Step title="Call tools (if needed)">
+    If tools are required, the agent calls them and receives results. It can call multiple tools in a single response if your question requires it. After receiving tool results, it loops back to re-evaluate before writing the final answer.
+  </Step>
+
+  <Step title="Compose and stream the answer">
+    Once the agent has everything it needs, it writes its final response. You receive the answer as a live stream of tokens — character by character — as it is generated.
+  </Step>
+</Steps>
+
+## Language and response style
+
+The agent responds in the language of the conversation. By default it replies in Chinese, but if you write in another language — or explicitly ask it to respond in a different language — it follows your preference throughout the conversation.
+
+<Tip>
+  Simply start writing in your preferred language or say "Please respond in English" and the agent will switch for the rest of the session.
+</Tip>
+
+## Thinking mode
+
+Claw Agent supports an optional thinking mode. When thinking mode is enabled, the agent works through its reasoning process and surfaces that internal monologue to you before delivering the final answer. This is useful for complex questions where you want to see how the agent arrived at its conclusion.
+
+Thinking content arrives in the stream as annotation events separate from the main response text. Your client can choose to display or hide these tokens.
+
+<Note>
+  Thinking mode is configured server-side. Check with your administrator or refer to the self-hosting docs to see whether it is enabled in your deployment.
+</Note>
+
+## Model
+
+The agent uses the **MiniMax M2** model through an Anthropic-compatible API. The model supports up to 4,096 output tokens per response by default, which covers the vast majority of conversational and analytical tasks.
+
+## What the agent is good at
+
+<CardGroup cols={2}>
+  <Card title="Technical questions" icon="code">
+    Answer programming questions, explain concepts, review code, and suggest architectural approaches.
+  </Card>
+  <Card title="Multi-step reasoning" icon="diagram-project">
+    Break down complex problems into steps and work through them systematically before presenting a conclusion.
+  </Card>
+  <Card title="Tool-augmented answers" icon="wrench">
+    Fetch live weather, compute math, and search the knowledge base — all in a single response when needed.
+  </Card>
+  <Card title="Sustained context" icon="clock-rotate-left">
+    Keep track of everything discussed in the conversation so you don't have to repeat yourself.
+  </Card>
+</CardGroup>

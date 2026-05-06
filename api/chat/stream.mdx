@@ -1,0 +1,217 @@
+---
+title: "POST /api/chat — stream an AI response"
+description: "Send a user message to a conversation and receive the AI's response as a real-time token stream using the Vercel AI Data Stream protocol."
+---
+
+Use this endpoint to send a message and stream the AI's response back token by token. The server writes each piece of the response to the HTTP body as it is generated, so your client can render text progressively without waiting for the full reply. The user message and the completed assistant response are both persisted to the conversation history automatically.
+
+## Request
+
+<ParamField header="Authorization" type="string" required>
+  A valid JWT in the form `Bearer <token>`. Obtain this token from `POST /api/auth/login`.
+</ParamField>
+
+<ParamField body="conversationId" type="string" required>
+  The ID of the conversation to send the message to. The conversation must exist and belong to the authenticated user, otherwise the server returns `404`.
+</ParamField>
+
+<ParamField body="message" type="string" required>
+  The user message text to send.
+</ParamField>
+
+## Response
+
+A successful request returns HTTP **200** and immediately begins streaming the body. The response is not JSON — it is a line-delimited text stream.
+
+| Header | Value |
+|--------|-------|
+| `Content-Type` | `text/plain; charset=utf-8` |
+| `X-Vercel-AI-Data-Stream` | `v1` |
+| `Cache-Control` | `no-cache` |
+| `Connection` | `keep-alive` |
+
+## Stream format
+
+Each line of the response body carries a typed payload identified by its prefix character and a colon. Lines are separated by `\n`.
+
+<ResponseField name="0:&quot;&lt;token&gt;&quot;" type="text token">
+  A piece of the AI's response text. The value is a JSON-encoded string. Concatenate all `0:` lines in order to reconstruct the full reply.
+
+  ```
+  0:"Hello, how can I help "\n
+  0:"you today?"\n
+  ```
+</ResponseField>
+
+<ResponseField name="2:[{...}]" type="annotation">
+  A data annotation line. The value is a JSON-encoded array. Two annotation shapes are used:
+
+  **Thinking delta** — delivers a chunk of the model's internal reasoning when thinking mode is active:
+  ```
+  2:[{"type":"thinking_delta","content":"Let me consider the options..."}]\n
+  ```
+
+  **Thinking complete** — signals that the thinking phase has ended and text tokens will follow:
+  ```
+  2:[{"type":"thinking_complete"}]\n
+  ```
+</ResponseField>
+
+<ResponseField name="d:{...}" type="finish">
+  The final line of the stream. Always present. Signals that streaming is done.
+
+  ```
+  d:{"finishReason":"stop","usage":{"promptTokens":0,"completionTokens":0}}\n
+  ```
+
+  When an agent error occurs, `finishReason` is `"error"` instead of `"stop"`, and a preceding `0:` line will contain the error message.
+</ResponseField>
+
+<Note>
+  The `usage` object is always `{"promptTokens":0,"completionTokens":0}` in the current implementation. Token counts are not tracked server-side.
+</Note>
+
+## Side effects
+
+Calling this endpoint has the following persistent effects:
+
+- The user message is saved to the conversation history immediately, before streaming begins.
+- The assistant's complete response is saved to the conversation history after streaming finishes.
+- If this is the **first message** in the conversation, the conversation title is automatically set to the first 30 characters of the assistant's response (newlines replaced with spaces).
+- The conversation's `updatedAt` timestamp is refreshed after every successful exchange.
+
+## Stream timeout
+
+<Warning>
+  The stream has a hard 60-second timeout. If the LLM does not begin responding within that window, the server writes an error token followed by a finish line with `finishReason: "error"` and closes the connection.
+</Warning>
+
+## Error handling
+
+If the agent throws an error at any point during streaming, the server writes a final `0:` line containing the error description and then closes the stream with `finishReason: "error"`:
+
+```
+0:"❌ Agent 执行出错: <error message>"\n
+d:{"finishReason":"error","usage":{"promptTokens":0,"completionTokens":0}}\n
+```
+
+## Errors
+
+| Status | Meaning |
+|--------|---------|
+| `400 Bad Request` | `conversationId` or `message` is missing or empty. |
+| `401 Unauthorized` | The `Authorization` header is missing or the token is invalid. |
+| `404 Not Found` | The conversation does not exist, or it belongs to a different user. |
+
+## Reading the stream
+
+<Steps>
+  <Step title="Open a fetch request">
+    Send a `POST` request and get a reference to the response body reader. Do not `await response.json()` — the body is a stream, not JSON.
+  </Step>
+  <Step title="Read line by line">
+    Decode each chunk and split on `\n`. Check the prefix of each line to determine its type.
+  </Step>
+  <Step title="Accumulate text tokens">
+    For lines starting with `0:`, parse the JSON string and append it to your output buffer.
+  </Step>
+  <Step title="Detect the finish signal">
+    When you receive a line starting with `d:`, the stream is complete. Parse the JSON to check `finishReason`.
+  </Step>
+</Steps>
+
+## Examples
+
+<CodeGroup>
+```bash curl
+curl -X POST https://your-domain.com/api/chat \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{
+    "conversationId": "clx1234abcd5678efgh",
+    "message": "Explain how recursion works"
+  }'
+```
+
+```typescript fetch
+async function streamChat(
+  token: string,
+  conversationId: string,
+  message: string,
+  onToken: (text: string) => void,
+): Promise<void> {
+  const response = await fetch('https://your-domain.com/api/chat', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ conversationId, message }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+  }
+
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let fullText = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+
+    // Keep the last (potentially incomplete) line in the buffer
+    buffer = lines.pop() ?? '';
+
+    for (const line of lines) {
+      if (line.startsWith('0:')) {
+        // Text token — parse the JSON-encoded string and accumulate
+        const token = JSON.parse(line.slice(2)) as string;
+        fullText += token;
+        onToken(token);
+      } else if (line.startsWith('d:')) {
+        // Finish signal
+        const finish = JSON.parse(line.slice(2)) as {
+          finishReason: 'stop' | 'error';
+          usage: { promptTokens: number; completionTokens: number };
+        };
+        if (finish.finishReason === 'error') {
+          console.error('Stream ended with an agent error');
+        }
+      } else if (line.startsWith('2:')) {
+        // Thinking annotation — handle if you want to surface reasoning
+        const annotations = JSON.parse(line.slice(2)) as Array<{
+          type: string;
+          content?: string;
+        }>;
+        for (const annotation of annotations) {
+          if (annotation.type === 'thinking_delta') {
+            // Optional: surface the model's thinking content
+            console.debug('Thinking:', annotation.content);
+          }
+        }
+      }
+    }
+  }
+
+  console.log('Full response:', fullText);
+}
+
+// Usage
+await streamChat(
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+  'clx1234abcd5678efgh',
+  'Explain how recursion works',
+  (token) => process.stdout.write(token),
+);
+```
+</CodeGroup>
+
+<Tip>
+  If you are building a React frontend, the Vercel AI SDK's `useChat` hook from `@ai-sdk/react` understands this stream format natively. Set `api` to your endpoint, pass `Authorization` in `headers`, and include `conversationId` in `body` — the hook handles all line parsing and state management for you.
+</Tip>

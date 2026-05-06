@@ -1,0 +1,58 @@
+---
+title: "Claw Agent overview: streaming AI chat with tools"
+description: "Claw Agent is an AI chat assistant with real-time streaming, persistent conversation history, and built-in tools for weather, math, and knowledge search."
+---
+
+Claw Agent is an AI chat assistant powered by the MiniMax language model. It keeps track of your full conversation history, streams responses token-by-token as the model thinks, and can invoke built-in tools on your behalf — so you always see results in real time instead of waiting for a complete reply.
+
+12312312
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Streaming responses" icon="bolt">
+    Every reply streams to your screen as it is generated using the Vercel AI Data Stream protocol, giving you instant feedback without waiting for the full response.
+  </Card>
+
+  <Card title="Multi-turn conversations" icon="messages">
+    Claw Agent remembers everything said in a conversation. Create a named conversation and continue it across multiple messages or sessions.
+  </Card>
+
+  <Card title="Built-in tools" icon="wrench">
+    The agent can automatically use three tools during a response: weather lookup, arithmetic calculation, and knowledge base search.
+  </Card>
+
+  <Card title="Thinking mode" icon="brain">
+    When enabled, the model uses extended reasoning before replying, which improves accuracy on complex or multi-step questions.
+  </Card>
+
+  <Card title="Markdown rendering" icon="text">
+    The web UI renders the assistant's replies as formatted Markdown — including code blocks with syntax highlighting, lists, and tables.
+  </Card>
+
+  <Card title="JWT authentication" icon="lock">
+    Every conversation and message is private to your account. All API endpoints are protected with a signed JWT token.
+  </Card>
+</CardGroup>
+
+## Built-in agent tools
+
+The agent decides on its own when to call a tool. You do not need to invoke them explicitly — just ask a question that requires one.
+
+| Tool | What it does |
+| --- | --- |
+| `get_weather` | Returns current temperature, conditions, humidity, and wind for a city |
+| `calculate` | Evaluates arithmetic expressions (e.g. `(10 + 5) * 2`) |
+| `search_knowledge` | Looks up topics such as Python, TypeScript, React, Next.js, and LangGraph |
+
+## Two ways to use Claw Agent
+
+**Web app** — Open the browser UI at your deployment's port 3000. Register an account, create a conversation, and start chatting. Responses stream directly into the chat window and are rendered as Markdown.
+
+**REST API** — Use any HTTP client to call the JSON API directly. This is useful for integrating Claw Agent into your own application, running automated scripts, or exploring responses programmatically.
+
+<Note>
+  Both interfaces share the same backend. Conversations you create via the API appear in the web UI, and vice versa.
+</Note>
+
+Ready to send your first message? Follow the [Quickstart](/quickstart) to go from zero to a streamed AI response in a few minutes.

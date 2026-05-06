@@ -1,0 +1,106 @@
+---
+title: "Built-in tools: weather, calculator, and knowledge"
+description: "Claw Agent automatically calls tools when your message needs live data, math, or a knowledge lookup — weather, calculator, and knowledge search are built in."
+---
+
+Claw Agent comes with three built-in tools that extend what the AI can do beyond generating text. When you ask a question that requires live data, a precise calculation, or a topic lookup, the agent decides on its own to call the relevant tool — you never need to invoke tools explicitly or use any special syntax. Just ask naturally, and the agent handles the rest.
+
+3123123123
+
+## The three tools
+
+<CardGroup cols={1}>
+  <Card title="Weather lookup" icon="cloud-sun">
+    **Tool name:** `get_weather`
+
+    Fetches current weather conditions for a city, including temperature, weather condition, humidity, and wind speed.
+
+    **Supported cities:** Beijing, Shanghai, Shenzhen, Guangzhou, Hangzhou, Chengdu, Wuhan, and other Chinese cities. For cities not in the built-in dataset, the tool returns a default fair-weather estimate.
+  </Card>
+
+  <Card title="Calculator" icon="calculator">
+    **Tool name:** `calculate`
+
+    Evaluates mathematical expressions and returns a precise numeric result.
+
+    **Supported operators:** `+`, `-`, `*`, `/`, `%` (modulo), parentheses `()`, and decimal numbers. Complex nested expressions like `(100 + 50) * 0.15` are fully supported.
+  </Card>
+
+  <Card title="Knowledge search" icon="book-open">
+    **Tool name:** `search_knowledge`
+
+    Searches a built-in knowledge base and returns a concise summary of the matched topic.
+
+    **Covered topics:** Python, LangGraph, React, Next.js, TypeScript.
+  </Card>
+</CardGroup>
+
+## How to trigger each tool
+
+You don't use special commands or syntax. Write naturally and the agent determines when a tool call would improve its answer.
+
+<AccordionGroup>
+  <Accordion title="Triggering the weather tool">
+    Ask about the weather in a supported city:
+
+    ```text
+    What's the weather like in Shanghai today?
+    ```
+
+    ```text
+    北京现在天气怎么样？
+    ```
+
+    ```text
+    Is it raining in Guangzhou right now?
+    ```
+
+    The agent calls `get_weather` with the city name, then incorporates the real conditions — temperature, humidity, wind — into its response.
+  </Accordion>
+
+  <Accordion title="Triggering the calculator">
+    Ask the agent to compute or calculate something:
+
+    ```text
+    Calculate 15% of 340.
+    ```
+
+    ```text
+    What is (1024 * 768) / 4?
+    ```
+
+    ```text
+    If I split 850 by 6, what do I get?
+    ```
+
+    The agent extracts the mathematical expression, passes it to `calculate`, and returns the exact result alongside any explanation.
+  </Accordion>
+
+  <Accordion title="Triggering the knowledge search">
+    Ask about a topic covered by the knowledge base:
+
+    ```text
+    Give me a quick overview of LangGraph.
+    ```
+
+    ```text
+    What version of Python is current?
+    ```
+
+    ```text
+    What's new in React 19?
+    ```
+
+    The agent searches `search_knowledge` for the relevant topic and uses the retrieved summary to ground its answer in accurate, consistent information.
+  </Accordion>
+</AccordionGroup>
+
+## Tool use in practice
+
+The agent can call more than one tool in a single response. If you ask a question that spans multiple tools — for example, asking for the weather and then requesting a unit conversion in the same message — the agent calls each tool in turn and combines the results into one coherent answer.
+
+After the agent uses a tool, it briefly notes which tools it called at the end of its response, so you always know when its answer was augmented by live data or a computation.
+
+<Tip>
+  If the agent's answer seems uncertain about a topic that the knowledge base covers, try rephrasing your question to include the exact topic name — for example, "Tell me about TypeScript" rather than "Tell me about typed JavaScript."
+</Tip>

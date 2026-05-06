@@ -1,0 +1,68 @@
+---
+title: "Environment Variables Configuration Guide"
+description: "Configure your Claw Agent instance by setting these environment variables. Copy .env.example to .env and fill in the required values before starting the server."
+---
+
+Before starting Claw Agent, copy the `.env.example` file at the repository root to `.env` and set the values described below. The server reads this file at startup — changes take effect only after a restart. Variables marked as required must be set; the server will not function correctly without them.
+
+## LLM Provider
+
+<ParamField body="MINIMAX_API_KEY" type="string" required>
+  Your MiniMax API key, used to authenticate all requests to the LLM provider. Obtain one from [minimaxi.com](https://www.minimaxi.com/).
+</ParamField>
+
+<ParamField body="MINIMAX_BASE_URL" type="string" required>
+  The Anthropic-compatible endpoint for the MiniMax API.
+
+  **Default:** `https://api.minimaxi.com/anthropic`
+
+  You can point this at any Anthropic-compatible API endpoint if you want to use a different provider. See [AI Model Configuration](/configuration/ai-model) for details.
+</ParamField>
+
+## Authentication
+
+<ParamField body="JWT_SECRET" type="string" required>
+  The secret key used to sign and verify JSON Web Tokens for user authentication. Must be a long, random, unpredictable string.
+</ParamField>
+
+<Warning>
+  Never use a short or guessable value for `JWT_SECRET` in production. Generate a strong secret with a command such as `openssl rand -hex 64`. Anyone who obtains this value can forge authentication tokens for your instance.
+</Warning>
+
+## Database
+
+<ParamField body="DATABASE_URL" type="string" required>
+  PostgreSQL connection string for the application database.
+
+  **Example:** `postgresql://user:password@host:5432/dbname`
+
+  When using Docker Compose, set this to point at your database service, for example `postgresql://postgres:password@db:5432/claw`.
+</ParamField>
+
+## Web App
+
+<ParamField body="CORS_ORIGIN" type="string">
+  The origin the server allows for cross-origin requests from the web app.
+
+  **Default:** `http://localhost:3000`
+
+  In production, set this to the public URL of your web frontend (for example, `https://chat.example.com`). Requests from any other origin will be rejected.
+</ParamField>
+
+## AI Thinking Mode
+
+<ParamField body="THINKING_ENABLED" type="boolean">
+  Enables extended thinking mode, where the AI performs a structured reasoning pass before producing its final answer.
+
+  **Default:** `true`
+
+  Set to `false` to disable thinking mode entirely. See [AI Model Configuration](/configuration/ai-model) for a full explanation of thinking mode behavior.
+</ParamField>
+
+<ParamField body="THINKING_BUDGET_TOKENS" type="integer">
+  Maximum number of tokens the model may use during the thinking phase.
+
+  **Default:** `10000`
+
+  Increase this value to allow deeper reasoning on complex problems. Decreasing it speeds up responses but may reduce answer quality on hard questions. Has no effect when `THINKING_ENABLED` is `false`.
+</ParamField>

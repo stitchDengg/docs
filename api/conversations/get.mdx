@@ -1,0 +1,108 @@
+---
+title: "Get a conversation — GET /api/conversations/:id"
+description: "Fetch a single conversation by ID, including its full message history ordered oldest-first. Each message includes role, content, and optional thinking trace."
+---
+
+This endpoint returns a conversation together with all of its messages. Messages are ordered by `createdAt` ascending, so the earliest message in the thread appears first. Use this endpoint to restore a full conversation view or to resume a previous session.
+
+## Request
+
+All requests to this endpoint require a valid JWT passed as a Bearer token.
+
+<ParamField header="Authorization" type="string" required>
+  Your JWT access token. Format: `Bearer <token>`.
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  The UUID of the conversation you want to retrieve.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string" required>
+  UUID that uniquely identifies the conversation.
+</ResponseField>
+
+<ResponseField name="title" type="string" required>
+  The human-readable name of the conversation.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp recording when the conversation was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp recording when the conversation was last modified.
+</ResponseField>
+
+<ResponseField name="messages" type="object[]" required>
+  Ordered list of all messages in the conversation, sorted by `createdAt` ascending.
+
+  <Expandable title="Message properties">
+    <ResponseField name="id" type="string" required>
+      UUID that uniquely identifies the message.
+    </ResponseField>
+
+    <ResponseField name="role" type="string" required>
+      Who sent the message. One of `user`, `assistant`, or `system`.
+    </ResponseField>
+
+    <ResponseField name="content" type="string" required>
+      The text body of the message.
+    </ResponseField>
+
+    <ResponseField name="thinking" type="string">
+      Extended reasoning produced by the model before it composed its reply. This field is only present on `assistant` messages when thinking mode was active during generation; it is omitted otherwise.
+    </ResponseField>
+
+    <ResponseField name="createdAt" type="string" required>
+      ISO 8601 timestamp recording when the message was created.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+## Errors
+
+| Status | Cause |
+|--------|-------|
+| `404 Not Found` | No conversation with the given ID exists, or it belongs to a different user. |
+| `401 Unauthorized` | The `Authorization` header is missing or the token is invalid. |
+
+<Note>
+  The API returns `404` both when a conversation does not exist and when it belongs to another user. This prevents user enumeration.
+</Note>
+
+## Example
+
+<CodeGroup>
+
+```bash curl
+curl -X GET https://your-instance.com/api/conversations/a1b2c3d4-e5f6-7890-abcd-ef1234567890 \
+  -H "Authorization: Bearer <token>"
+```
+
+</CodeGroup>
+
+```json Response (200)
+{
+  "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "title": "My project chat",
+  "createdAt": "2026-05-06T10:00:00.000Z",
+  "updatedAt": "2026-05-06T10:45:00.000Z",
+  "messages": [
+    {
+      "id": "m1a2b3c4-d5e6-7890-abcd-ef1234567890",
+      "role": "user",
+      "content": "How do I reverse a linked list?",
+      "createdAt": "2026-05-06T10:01:00.000Z"
+    },
+    {
+      "id": "m2b3c4d5-e6f7-8901-bcde-f12345678901",
+      "role": "assistant",
+      "content": "You can reverse a linked list iteratively by maintaining three pointers...",
+      "thinking": "The user is asking about a classic data structures problem. I should explain the iterative approach first, then mention the recursive alternative.",
+      "createdAt": "2026-05-06T10:01:05.000Z"
+    }
+  ]
+}
+```

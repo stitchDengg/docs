@@ -1,0 +1,72 @@
+---
+title: "List conversations — GET /api/conversations"
+description: "Retrieve all conversations for the authenticated user, sorted by most recently updated. Each item includes id, title, message count, and timestamps."
+---
+
+The list endpoint returns every conversation owned by your account. Results are sorted by `updatedAt` in descending order, so the most recently active conversation appears first. Each item includes a `messageCount` summary so you can display conversation length without fetching the full message history.
+
+## Request
+
+All requests to this endpoint require a valid JWT passed as a Bearer token.
+
+<ParamField header="Authorization" type="string" required>
+  Your JWT access token. Format: `Bearer <token>`.
+</ParamField>
+
+## Response
+
+The response is a JSON array. Each element represents one conversation.
+
+<ResponseField name="id" type="string" required>
+  UUID that uniquely identifies the conversation.
+</ResponseField>
+
+<ResponseField name="title" type="string" required>
+  The human-readable name of the conversation.
+</ResponseField>
+
+<ResponseField name="messageCount" type="number" required>
+  Total number of messages in the conversation.
+</ResponseField>
+
+<ResponseField name="createdAt" type="string" required>
+  ISO 8601 timestamp recording when the conversation was created.
+</ResponseField>
+
+<ResponseField name="updatedAt" type="string" required>
+  ISO 8601 timestamp recording when the conversation was last modified.
+</ResponseField>
+
+## Example
+
+<CodeGroup>
+
+```bash curl
+curl -X GET https://your-instance.com/api/conversations \
+  -H "Authorization: Bearer <token>"
+```
+
+</CodeGroup>
+
+```json Response
+[
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "title": "My project chat",
+    "messageCount": 12,
+    "createdAt": "2026-05-01T10:00:00.000Z",
+    "updatedAt": "2026-05-06T08:30:00.000Z"
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+    "title": "Bug triage",
+    "messageCount": 3,
+    "createdAt": "2026-04-28T14:22:00.000Z",
+    "updatedAt": "2026-04-29T09:11:00.000Z"
+  }
+]
+```
+
+<Note>
+  An empty array (`[]`) is returned when you have no conversations. This is not an error.
+</Note>
