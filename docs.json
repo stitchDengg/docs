@@ -14,91 +14,86 @@
     }
   },
   "navigation": {
-    "products": [
+    "languages": [
       {
-        "product": "12321312",
-        "languages": [
+        "language": "cn",
+        "tabs": [
           {
-            "language": "cn",
-            "tabs": [
+            "tab": "Documentation",
+            "groups": [
               {
-                "tab": "Documentation",
-                "groups": [
-                  {
-                    "group": "Get Started",
-                    "pages": [
-                      "introduction",
-                      "quickstart",
-                      "self-hosting"
-                    ]
-                  },
-                  {
-                    "group": "Core Concepts",
-                    "pages": [
-                      "concepts/conversations",
-                      "concepts/ai-agent",
-                      "concepts/streaming",
-                      "concepts/tools"
-                    ]
-                  },
-                  {
-                    "group": "Using the App",
-                    "pages": [
-                      "guides/authentication",
-                      "guides/starting-a-chat",
-                      "guides/conversation-history",
-                      "guides/thinking-mode"
-                    ]
-                  },
-                  {
-                    "group": "Configuration",
-                    "pages": [
-                      "configuration/environment-variables",
-                      "configuration/ai-model"
-                    ]
-                  }
+                "group": "Get Started",
+                "pages": [
+                  "introduction",
+                  "quickstart",
+                  "self-hosting"
                 ]
               },
               {
-                "tab": "API Reference",
-                "groups": [
-                  {
-                    "group": "Authentication",
-                    "pages": [
-                      "api/auth/register",
-                      "api/auth/login",
-                      "api/auth/me"
-                    ]
-                  },
-                  {
-                    "group": "Conversations",
-                    "pages": [
-                      "api/conversations/list",
-                      "api/conversations/create",
-                      "api/conversations/get",
-                      "api/conversations/update",
-                      "api/conversations/delete"
-                    ]
-                  },
-                  {
-                    "group": "Chat",
-                    "pages": [
-                      "api/chat/stream"
-                    ]
-                  }
+                "group": "Core Concepts",
+                "pages": [
+                  "concepts/conversations",
+                  "concepts/ai-agent",
+                  "concepts/streaming",
+                  "concepts/tools"
+                ]
+              },
+              {
+                "group": "Using the App",
+                "pages": [
+                  "guides/authentication",
+                  "guides/starting-a-chat",
+                  "guides/conversation-history",
+                  "guides/thinking-mode"
+                ]
+              },
+              {
+                "group": "Configuration",
+                "pages": [
+                  "configuration/environment-variables",
+                  "configuration/ai-model"
                 ]
               }
             ]
           },
           {
-            "language": "ja",
-            "tabs": [
+            "tab": "API Reference",
+            "groups": [
               {
-                "tab": "你好啊",
+                "group": "Authentication",
                 "pages": [
-                  "12312312"
+                  "api/auth/register",
+                  "api/auth/login",
+                  "api/auth/me"
+                ]
+              },
+              {
+                "group": "Conversations",
+                "pages": [
+                  "api/conversations/list",
+                  "api/conversations/create",
+                  "api/conversations/get",
+                  "api/conversations/update",
+                  "api/conversations/delete"
+                ]
+              },
+              {
+                "group": "Chat",
+                "pages": [
+                  "api/chat/stream"
                 ]
               }
+            ]
+          }
+        ]
+      },
+      {
+        "language": "ja",
+        "tabs": [
+          {
+            "tab": "你好啊",
+            "pages": [
+              "12312312"
             ]
           }
         ]
